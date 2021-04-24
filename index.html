@@ -1,0 +1,1027 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" />
+    <title>Zelda</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
+</head>
+ <body>
+
+<script type="text/javascript">
+
+class Preloader extends Phaser.Scene {
+
+
+constructor () {
+    super('Preloader');
+}
+preload() {
+this.load.image('tiles', './assets/dungeonTiles.png');
+this.load.tilemapTiledJSON('dungeon', './assets/dungeon1.json')
+this.load.tilemapTiledJSON('dungeon2', './assets/dungeon2.json')
+
+this.load.image('deathScreen', 'assets/deathScreen.jpg')
+this.load.image('player', 'assets/player.jpg')
+this.load.image('enemyBomb', 'assets/enemyBomb.png')
+this.load.image('enemyBombExplosion', 'assets/enemyBombExplosion.jpg')
+this.load.image('bombExplosion', 'assets/bombExplosion.png')
+this.load.image('enemyFollower', 'assets/enemyFollower.png')
+this.load.image('dagger', 'assets/dagger.jpg')
+this.load.image('invinsibilityPotion', 'assets/invinsibilityPotion.png')
+this.load.image('speedPotion', 'assets/speedPotion.png')
+this.load.image('itemBomb', 'assets/bomb.png')
+this.load.image('heart', 'assets/heart.png')
+this.load.image('heartEmpty', 'assets/heartEmpty.png')
+this.load.image('coin', 'assets/coin.png')
+this.load.image('chest', 'assets/chest.jpg')
+this.load.image('stairs', 'assets/stairs.png')
+this.load.image('stairsGoUp', 'assets/stairsGoUp.png')
+this.load.image('inventoryBackground', 'assets/inventoryBackground.jpg')
+this.load.image('inventoryBackgroundIngame', 'assets/inventoryBackgroundIngame.png')
+}
+
+create() {
+  
+}
+
+update() {
+    this.scene.start("Game")
+}
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+
+
+class Game extends Phaser.Scene {
+
+
+
+constructor () {
+    super('Game');
+}
+
+preload() {
+    this.cursors = this.input.keyboard.createCursorKeys();
+}
+
+create() {
+    
+    if(dungeon==0){
+        this.map = this.make.tilemap({key : 'dungeon'})
+    }
+    if(dungeon==1){
+        this.map = this.make.tilemap({key : 'dungeon2'})
+    }
+  
+    const tileset = this.map.addTilesetImage('dungeonTiles', 'tiles')
+
+    const ground = this.map.createStaticLayer('Ground',tileset)
+    this.map.createStaticLayer('wallsNoCollideDown',tileset).setDepth(2);
+    this.map.createStaticLayer('wallsNoCollideTop',tileset).setDepth(-1);
+
+    const wallsLayer =  this.map.createStaticLayer('Walls', tileset)
+    wallsLayer.setCollisionByExclusion(-1, true);
+    player = this.physics.add.sprite(playerXSpawn,playerYSpawn,'player').setScale(0.1)
+    this.physics.add.collider(player, wallsLayer)
+
+
+
+
+
+
+
+    interagirText = this.add.text(-1000,-1000,  "O pour intéragir",{ fill:'#fff',fontSize:10}).setDepth(3);  
+    heart1 = this.physics.add.sprite(350, 200, 'heart').setScrollFactor(0).setScale(0.05).setDepth(1);
+    heart2 = this.physics.add.sprite(375, 200, 'heart').setScrollFactor(0).setScale(0.05).setDepth(1);
+    heart3 = this.physics.add.sprite(400, 200, 'heart').setScrollFactor(0).setScale(0.05).setDepth(1);
+    heart4 = this.physics.add.sprite(425, 200, 'heart').setScrollFactor(0).setScale(0.05).setDepth(1);
+    heart5 = this.physics.add.sprite(450, 200, 'heart').setScrollFactor(0).setScale(0.05).setDepth(1);
+
+
+
+    this.cameras.main.fadeIn(1000, 0, 0, 0)
+
+
+
+    this.changeHeart();
+
+    this.cameras.main.startFollow(player, true)
+    this.cameras.main.zoom = 2;
+
+
+
+    
+    daggers = this.physics.add.group();
+    bombs = this.physics.add.group();
+    
+    this.physics.add.collider(daggers, wallsLayer, this.destroyDagger, null, this)
+    this.physics.add.collider(bombs, wallsLayer)
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+    ////////////////////ITEM BOMB//////////////////////////////////////////
+    this.itemDaggers = this.physics.add.group({
+        immovable:true
+    });
+   
+   // const itemBombObjects = this.map.getObjectLayer('itemDagger').objects;
+
+
+  /*  for (const itemDagger of itemDaggerObjects) {
+    this.itemDaggers.create(itemDagger.x, itemDagger.y, 'dagger')
+        .setOrigin(0.5,0.5)
+        .setScale(0.1)
+        .setDepth(1)
+}*/
+for (const itemDagger of this.itemDaggers.children.entries) {
+    this.physics.add.overlap(player, itemDagger, this.pickUpitemDaggers, null, this);
+}
+    this.physics.add.overlap(player, this.itemDaggers, this.pickUpitemDagger, null, this);
+
+        ////////////////////////////////////////////////////////////////////////
+    ////////////////////ITEM BOMB//////////////////////////////////////////
+    this.itemBombs = this.physics.add.group({
+        immovable:true
+    });
+   
+    const itemBombObjects = this.map.getObjectLayer('itemBomb').objects;
+
+
+    for (const itemBomb of itemBombObjects) {
+    this.itemBombs.create(itemBomb.x, itemBomb.y, 'itemBomb')
+        .setOrigin(0.5,0.5)
+        .setScale(0.1)
+        .setDepth(1)
+}
+for (const itemBomb of this.itemBombs.children.entries) {
+    this.physics.add.overlap(player, itemBomb, this.pickUpitemBomb, null, this);
+}
+    this.physics.add.overlap(player, this.itemBombs, this.pickUpitemBomb, null, this);
+
+    ////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////CHESTS//////////////////////////////////////////
+    this.chests = this.physics.add.group({
+        immovable:true
+    });
+   
+    const chestObject = this.map.getObjectLayer('chest').objects;
+
+
+    for (const chest of chestObject) {
+    this.chests.create(chest.x, chest.y, 'chest')
+        .setOrigin(0.5,0.5)
+        .setScale(0.04)
+        .setDepth(1)
+}
+for (const chest of this.chests.children.entries) {
+    this.physics.add.overlap(player, chest, this.openChest, null, this);
+}
+
+    ////////////////////////////////////////////////////////////////////////////////
+    ////////////////////DESTROYABLE WALLS //////////////////////////////////////////
+    this.destroyableWalls = this.physics.add.group({
+        immovable:true
+    });
+   
+    const destroyableWallObject = this.map.getObjectLayer('destroyableWalls').objects;
+
+
+    for (const destroyableWall of destroyableWallObject) {
+    this.destroyableWalls.create(destroyableWall.x, destroyableWall.y, 'invinsibilityPotion')
+        .setOrigin(0.5,0.5)
+        .setScale(0.04)
+        .setDepth(1)
+}
+for (const destroyableWall of this.destroyableWalls.children.entries) {
+    this.physics.add.overlap(daggers, destroyableWall, this.daggerDestroyableWalls, null, this);
+    this.physics.add.collider(player, destroyableWall);
+    this.physics.add.collider(bombs, destroyableWall)
+}
+
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////ITEM SPEED//////////////////////////////////////////
+    this.itemSpeeds = this.physics.add.group({
+        immovable:true
+    });
+   
+    const itemSpeedObjects = this.map.getObjectLayer('itemSpeed').objects;
+
+
+    for (const itemSpeed of itemSpeedObjects) {
+    this.itemSpeeds.create(itemSpeed.x, itemSpeed.y, 'speedPotion')
+        .setOrigin(0.5,0.5)
+        .setScale(0.02)
+        .setDepth(1)
+}
+for (const itemSpeed of this.itemSpeeds.children.entries) {
+    this.physics.add.overlap(player, itemSpeed, this.pickUpitemSpeed, null, this);
+}
+    this.physics.add.overlap(player, this.itemSpeeds, this.pickUpitemSpeed, null, this);
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////ITEM INVISIBILITY//////////////////////////////////////////
+    this.itemInvisibilities = this.physics.add.group({
+        immovable:true
+    });
+   
+    const itemInvisibilityObject = this.map.getObjectLayer('itemInvisibility').objects;
+
+
+    for (const itemInvisibility of itemInvisibilityObject) {
+    this.itemInvisibilities.create(itemInvisibility.x, itemInvisibility.y, 'invinsibilityPotion')
+        .setOrigin(0.5,0.5)
+        .setScale(0.1)
+        .setDepth(1)
+}
+for (const itemInvisibility of this.itemInvisibilities.children.entries) {
+    this.physics.add.overlap(player, itemInvisibility, this.pickUpitemInvisibility, null, this);
+}
+    this.physics.add.overlap(player, this.itemInvisibilities, this.pickUpitemInvisibility, null, this);
+
+    ////////////////////////////////////////////////////////////////////////
+    /////////////////////////COINS//////////////////////////////////////////
+    this.coins = this.physics.add.group({
+        immovable:true
+    });
+   
+    const coinObjects = this.map.getObjectLayer('coin').objects;
+
+
+    for (const coin of coinObjects) {
+    this.coins.create(coin.x, coin.y, 'coin')
+        .setOrigin(0.5,0.5)
+        .setScale(0.05)
+        .setDepth(1)
+}
+for (const coin of this.coins.children.entries) {
+    this.physics.add.overlap(player, coin, this.pickUpCoin, null, this);
+}
+
+this.physics.add.overlap(player, this.coins, this.pickUpCoin, null, this);
+    ////////////////////////////////////////////////////////////////////////
+    /////////////////////ESCALIERS GO UP//////////////////////////////////////////
+    this.escaliersGoUp = this.physics.add.group({
+        immovable:true
+    });
+   
+    const escalierGoUpObjects = this.map.getObjectLayer('escaliersGoUp').objects;
+
+
+    for (const escalierGoUp of escalierGoUpObjects) {
+    this.escaliersGoUp.create(escalierGoUp.x, escalierGoUp.y, 'stairsGoUp')
+        .setOrigin(0.5,0.5)
+        .setScale(0.05)
+        .setDepth(1)
+}
+for (const escalierGoUp of this.escaliersGoUp.children.entries) {
+    this.physics.add.overlap(player, escalierGoUp, this.useStairsGoUp, null, this);
+}    ////////////////////////////////////////////////////////////////////////
+    /////////////////////ESCALIERS GO DOWN//////////////////////////////////////////
+    this.escaliersGoDown = this.physics.add.group({
+        immovable:true
+    });
+   
+    const escalierGoDownObjects = this.map.getObjectLayer('escaliersGoDown').objects;
+
+
+    for (const escalierGoDown of escalierGoDownObjects) {
+    this.escaliersGoDown.create(escalierGoDown.x, escalierGoDown.y, 'stairs')
+        .setOrigin(0.5,0.5)
+        .setScale(0.1)
+        .setDepth(1)
+}
+for (const escalierGoDown of this.escaliersGoDown.children.entries) {
+    this.physics.add.overlap(player, escalierGoDown, this.useStairsGoDown, null, this);
+}
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////ITEM HEART//////////////////////////////////////////
+    this.itemHearts = this.physics.add.group({
+        immovable:true
+    });
+   
+    const itemHeartObjects = this.map.getObjectLayer('itemHeart').objects;
+
+
+    for (const itemHeart of itemHeartObjects) {
+    this.itemHearts.create(itemHeart.x, itemHeart.y, 'heart')
+        .setOrigin(0.5,0.5)
+        .setScale(0.05)
+        .setDepth(1)
+}
+for (const itemHeart of this.itemHearts.children.entries) {
+    this.physics.add.overlap(player, itemHeart, this.pickUpItemHeart, null, this);
+}
+    this.physics.add.overlap(player, this.itemHearts, this.pickUpItemHeart, null, this);
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////ENEMY BOMB/////////////////////////////////////////
+    this.enemyBombs = this.physics.add.group({
+        immovable:true
+    });
+   
+    const enemyBombObjects = this.map.getObjectLayer('enemyBomb').objects;
+
+
+    for (const enemyBomb of enemyBombObjects) {
+    this.enemyBombs.create(enemyBomb.x, enemyBomb.y, 'enemyBomb')
+        .setOrigin(0.5,0.5)
+        .setScale(0.025)
+     
+}
+for (const enemyBomb of this.enemyBombs.children.entries) {
+this.physics.add.overlap(player, enemyBomb, this.contactBombPlayer, null, this);
+this.physics.add.overlap(daggers, enemyBomb, this.contactDaggerBomb, null, this);
+this.physics.add.collider(wallsLayer, enemyBomb);
+enemyBomb.direction="UP"
+}
+const probaDropBomb = ["heart","invinsibility"]
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////BOMB EXPLOSION/////////////////////////////////////////
+    this.bombExplosions = this.physics.add.group({
+        immovable:true
+    });
+this.physics.add.overlap(this.destroyableWalls, this.bombExplosions, this.destroyDestroyableWalls, null, this);
+this.physics.add.overlap(this.enemyBombs, this.bombExplosions, this.destroyEnemyBomb, null, this);
+
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////ENEMY BOMB EXPLOSION/////////////////////////////////////////
+    this.enemyBombExplosions = this.physics.add.group({
+        immovable:true
+    });
+this.physics.add.overlap(player, this.enemyBombExplosions, this.damagePlayer, null, this);
+this.physics.add.overlap(this.destroyableWalls, this.enemyBombExplosions, this.destroyDestroyableWalls, null, this);
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////ENEMY Follower/////////////////////////////////////////
+    this.enemyFollowers = this.physics.add.group({
+        immovable:true
+    });
+   
+    const enemyFollowerObjects = this.map.getObjectLayer('enemyFollower').objects;
+
+
+    for (const enemyFollower of enemyFollowerObjects) {
+    this.enemyFollowers.create(enemyFollower.x, enemyFollower.y, 'enemyFollower')
+        .setOrigin(0.5,0.5)
+        .setScale(0.1)
+}
+for (const enemyFollower of this.enemyFollowers.children.entries) {
+this.physics.add.collider(player, enemyFollower, this.contactFollowerPlayer, null, this);
+this.physics.add.collider(daggers, enemyFollower, this.contactDaggerFollower, null, this)
+this.physics.add.collider(wallsLayer, enemyFollower);
+this.physics.add.overlap(enemyFollower, this.bombExplosions, this.destroyFollower, null, this);
+}      
+    keyO = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.O);
+    keyB = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.B);
+    keyI = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I);
+    keyP = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+    keyM = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
+    keyZ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+    keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+    keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+    keyQ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
+    spaceBar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+}
+
+update() {
+
+
+if(heartLeft<=0){
+    this.death();
+}
+	
+if(invinsibilityActive==false){
+    for (const enemyFollower of this.enemyFollowers.children.entries) {
+        this.physics.moveTo(enemyFollower, player.x, player.y, 15);
+    }
+}
+else if (invinsibilityActive==true){
+    for (const enemyFollower of this.enemyFollowers.children.entries) {
+        enemyFollower.setVelocity(0)
+    }
+}
+for (const enemyBomb of this.enemyBombs.children.entries) {
+if (enemyBomb.body.blocked.down) {
+    console.log("up")
+    enemyBomb.direction = 'UP';
+}
+
+if (enemyBomb.body.blocked.up) {
+    console.log("down")
+    enemyBomb.direction = 'DOWN';
+}
+
+if (enemyBomb.direction === 'UP') {
+    enemyBomb.setVelocityY(-100);
+} else if (enemyBomb.direction === 'DOWN'){
+    enemyBomb.setVelocityY(100);
+}
+
+
+} 
+
+
+if(delaiLancerArmeBool == false){
+    delaiLancerArme --
+    }
+    if (delaiLancerArme <= 0 && delaiLancerArmeBool == false)  
+  {
+    delaiLancerArme = delaiLancerArmeReset;
+    delaiLancerArmeBool = true;
+  }
+
+  if(delaiLancerBombBool == false){
+    delaiLancerBomb --
+    }
+    if (delaiLancerBomb <= 0 && delaiLancerBombBool == false)  
+  {
+    delaiLancerBomb = delaiLancerBombReset;
+    delaiLancerBombBool = true;
+  }
+
+//////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+    if(keyP.isDown){
+        if(pauseActive==true){
+            pauseActive=false
+            this.destroyPauseInventory();
+            this.physics.resume()
+            keyP.reset();
+        }
+        else if (pauseActive==false){
+            pauseActive=true
+            this.physics.pause();
+            keyP.reset();
+            this.pauseInventory();
+        }
+    }
+
+
+    if(keyM.isDown){
+        if(pauseActive==false){
+            if(speedActive==false){
+                if(speedPotionInventory>0){
+                    this.activateSpeed();
+                }
+            }
+        }
+    }
+
+    if(keyI.isDown){
+        if(pauseActive==false){
+            if(invinsibilityActive==false){
+                if(invinsibilityPotionInventory>0){
+                    this.activateInvinsibility();
+                }
+            }
+        }
+    }
+
+    if(this.cursors.left.isDown || keyQ.isDown){
+        player.setVelocity(-speed,0)
+         playerDirection = "LEFT";
+    }
+    if(this.cursors.right.isDown || keyD.isDown){
+        player.setVelocity(speed,0)
+         playerDirection = "RIGHT";
+    }
+    if(this.cursors.up.isDown || keyZ.isDown){
+        player.setVelocity(0,-speed)
+        playerDirection = "UP";
+    }
+    if(this.cursors.down.isDown || keyS.isDown){
+        player.setVelocity(0,speed)
+         playerDirection = "DOWN";
+    }
+    if(this.cursors.up.isUp && this.cursors.down.isUp && this.cursors.right.isUp && this.cursors.left.isUp && keyQ.isUp && keyD.isUp && keyZ.isUp && keyS.isUp){
+        player.setVelocity(0,0)
+    }
+    if(spaceBar.isDown && delaiLancerArmeBool ==true){
+        if(pauseActive==false){
+            if(daggerInventory>0){
+                this.lancerDague();
+                delaiLancerArmeBool = false
+            }
+        }
+    }
+    if(keyB.isDown && delaiLancerBombBool ==true){
+        if(pauseActive==false){
+            if(bombInventory>0){
+                this.lancerBomb();
+                delaiLancerBombBool = false
+            }
+        }
+    }
+}
+
+
+
+pauseInventory(){
+    inventoryBackground = this.physics.add.sprite(640,360, 'inventoryBackground').setScrollFactor(0).setScale(1.7).setAlpha(1).setDepth(3);
+    inventoryDagger = this.physics.add.sprite(460, 290, 'dagger').setScrollFactor(0).setScale(0.05).setDepth(3);
+    daggerText = this.add.text(450, 290,  daggerInventory,{ fill:'#000', size:200, strokeThickness: 2,stroke: '#ff0000'}).setScrollFactor(0).setDepth(3);  
+    inventoryInvinsibilityPotion = this.physics.add.sprite(512, 290, 'invinsibilityPotion').setScrollFactor(0).setScale(0.05).setDepth(3);
+    invinsibilityPotionText = this.add.text(505, 290,  invinsibilityPotionInventory,{ fill:'#000', size:200, strokeThickness: 2,stroke: '#ff0000'}).setScrollFactor(0).setDepth(3);  
+    inventorySpeedPotion = this.physics.add.sprite(564, 290, 'speedPotion').setScrollFactor(0).setScale(0.03).setDepth(3);
+    speedPotionText = this.add.text(560, 290,  speedPotionInventory,{ fill:'#000', size:200, strokeThickness: 2,stroke: '#ff0000'}).setScrollFactor(0).setDepth(3);  
+    inventoryBomb = this.physics.add.sprite(620, 290, 'itemBomb').setScrollFactor(0).setScale(0.1).setDepth(3);
+    bombText = this.add.text(615, 290,  bombInventory,{ fill:'#000', size:200, strokeThickness: 2,stroke: '#ff0000'}).setScrollFactor(0).setDepth(3);  
+    inventoryCoins = this.physics.add.sprite(620, 400, 'coin').setScrollFactor(0).setScale(0.08).setDepth(3);
+    coinsText = this.add.text(615, 400,  coinsInventory,{ fill:'#000', size:200, strokeThickness: 2,stroke: '#ff0000'}).setScrollFactor(0).setDepth(3);  
+}
+destroyPauseInventory(){
+    inventoryBackground.destroy();
+    
+    daggerText.destroy();
+    invinsibilityPotionText.destroy();
+    inventoryInvinsibilityPotion.destroy();
+    inventoryDagger.destroy();
+    inventorySpeedPotion.destroy();
+    speedPotionText.destroy()
+    inventoryBomb.destroy();
+    bombText.destroy();
+    inventoryCoins.destroy();
+    coinsText.destroy();
+}
+destroyEnemyBomb(enemyBomb){
+    enemyBombExplosion = this.enemyBombExplosions.create(enemyBomb.x, enemyBomb.y, 'enemyBombExplosion').setScrollFactor(1).setScale(0.1).setDepth(2)
+    enemyBomb.destroy();
+    this.time.delayedCall(1000, this.endExplosionEnemyBomb, null, this);
+    var randomEnemyBombDrop = Phaser.Math.Between(0, 5);
+    console.log(randomEnemyBombDrop)
+    if(randomEnemyBombDrop==0){
+        this.coins.create(enemyBomb.x, enemyBomb.y, 'coin').setScale(0.05)
+    }
+    if(randomEnemyBombDrop==1){
+        this.itemHearts.create(enemyBomb.x, enemyBomb.y, 'heart').setScale(0.05)
+    }
+    if(randomEnemyBombDrop==2){
+        this.itemBombs.create(enemyBomb.x, enemyBomb.y, 'itemBomb').setScale(0.1)
+    }
+    if(randomEnemyBombDrop==3){
+        this.itemSpeeds.create(enemyBomb.x, enemyBomb.y, 'speedPotion').setScale(0.025)
+    }
+    if(randomEnemyBombDrop==4){
+        this.itemInvisibilities.create(enemyBomb.x, enemyBomb.y, 'invinsibilityPotion').setScale(0.05)
+    }
+    if(randomEnemyBombDrop==5){
+        this.itemDaggers.create(enemyBomb.x, enemyBomb.y, 'dagger').setScale(0.05)
+    }
+}
+contactFollowerPlayer(player,enemyFollower){
+    this.destroyFollower(enemyFollower)
+    this.damagePlayer();
+    this.changeHeart();
+}
+contactDaggerFollower(dagger,enemyFollower){
+  this.destroyFollower(enemyFollower)
+    dagger.destroy();
+}
+destroyFollower(enemyFollower){
+    enemyFollower.destroy();
+}
+contactBombPlayer(player,enemyBomb){
+    this.destroyEnemyBomb(enemyBomb);
+}
+contactDaggerBomb(dagger,enemyBomb){
+    dagger.destroy();
+    this.destroyEnemyBomb(enemyBomb);
+}
+lancerBomb(){
+keyB.reset()
+if(playerDirection=="UP")
+{
+    var bomb = bombs.create(player.x, player.y, 'itemBomb').setScale(0.05);
+    bomb.setVelocity(0, -200);
+}
+if(playerDirection=="DOWN")
+{
+    var bomb = bombs.create(player.x, player.y, 'itemBomb').setScale(0.05);
+    bomb.setVelocity(0, 200);
+}
+if(playerDirection=="LEFT")
+{
+    var bomb = bombs.create(player.x, player.y, 'itemBomb').setScale(0.05);
+    bomb.setVelocity(-200, 0);
+}
+if(playerDirection=="RIGHT")
+{
+    var bomb = bombs.create(player.x, player.y, 'itemBomb').setScale(0.05);
+    bomb.setVelocity(200, 0);
+}
+bombInventory-=1;
+
+this.time.delayedCall(1000, this.explodeBomb, [bomb], this);
+
+}
+explodeBomb(bomb){
+    bombExplosion = this.bombExplosions.create(bomb.x, bomb.y, 'bombExplosion').setScrollFactor(1).setScale(0.1).setDepth(2)
+    bomb.destroy();
+    this.time.delayedCall(1000, this.endExplosionBomb, null, this);
+}
+lancerDague(){
+
+    spaceBar.reset()
+    if(playerDirection=="UP")
+    {
+        var dagger = daggers.create(player.x, player.y, 'dagger').setScale(0.02);
+        dagger.setVelocity(0, -200);
+    }
+    if(playerDirection=="DOWN")
+    {
+        var dagger = daggers.create(player.x, player.y, 'dagger').setScale(0.02);
+        dagger.setVelocity(0, 200);
+    }
+    if(playerDirection=="LEFT")
+    {
+        var dagger = daggers.create(player.x, player.y, 'dagger').setScale(0.02);
+        dagger.setVelocity(-200, 0);
+    }
+    if(playerDirection=="RIGHT")
+    {
+        var dagger = daggers.create(player.x, player.y, 'dagger').setScale(0.02);
+        dagger.setVelocity(200, 0);
+    }
+    daggerInventory-=1;
+}
+changeHeart(){
+console.log("Change Heart")
+    heart1.destroy();
+    heart2.destroy();
+    heart3.destroy();
+    heart4.destroy();
+    heart5.destroy();
+
+
+    if(heartLeft>0){
+        heart1 = this.physics.add.sprite(350, 200, 'heart').setScrollFactor(0).setScale(0.05).setDepth(1);
+    }
+    else{
+        heart1 = this.physics.add.sprite(350, 200, 'heartEmpty').setScrollFactor(0).setScale(0.19).setDepth(1);   
+    }
+    if(heartLeft>1){
+        heart2 = this.physics.add.sprite(375, 200, 'heart').setScrollFactor(0).setScale(0.05).setDepth(1);
+    }
+    else{
+        heart2 = this.physics.add.sprite(375, 200, 'heartEmpty').setScrollFactor(0).setScale(0.19).setDepth(1);
+    }
+    if(heartLeft>2){
+    heart3 = this.physics.add.sprite(400, 200, 'heart').setScrollFactor(0).setScale(0.05).setDepth(1);
+    }
+    else{
+        heart3 = this.physics.add.sprite(400, 200, 'heartEmpty').setScrollFactor(0).setScale(0.19).setDepth(1);
+    }
+    if(heartLeft>3){
+    heart4 = this.physics.add.sprite(425, 200, 'heart').setScrollFactor(0).setScale(0.05).setDepth(1);
+    }
+    else{
+        heart4 = this.physics.add.sprite(425, 200, 'heartEmpty').setScrollFactor(0).setScale(0.19).setDepth(1);
+    }
+    if(heartLeft>4){
+        heart5 = this.physics.add.sprite(450, 200, 'heart').setScrollFactor(0).setScale(0.05).setDepth(1);
+    }
+    else{
+        heart5 = this.physics.add.sprite(450, 200, 'heartEmpty').setScrollFactor(0).setScale(0.19).setDepth(1);
+    }}
+destroyDagger(dagger){
+    dagger.destroy();
+
+}
+destroyDestroyableWalls(destroyableWall){
+    destroyableWall.destroy();
+
+}
+endExplosionEnemyBomb(){
+    enemyBombExplosion.destroy()
+}
+endExplosionBomb(){
+    bombExplosion.destroy()
+}
+damagePlayer(){
+    console.log("test")
+    if(playerInvincible==false){
+    heartLeft-=1;
+    playerInvincible=true
+    this.changeHeart();
+    player.setTint(0xff0000)
+    this.time.delayedCall(1000, this.stopInvinciblePLayer, null, this);
+    }
+}
+stopInvinciblePLayer(){
+    playerInvincible=false
+    player.setTint(0xffffff)
+
+}
+pickUpItemHeart(player,itemHeart){
+    if(heartLeft<5){
+    interagirText.destroy();
+    interagirText = this.add.text(itemHeart.x-45, itemHeart.y-30,  "\"O\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
+    if(keyO.isDown){
+        heartLeft+=1;
+        this.changeHeart();
+        itemHeart.destroy();
+        interagirText.destroy();
+        
+    }
+}
+}
+pickUpCoin(player,coin){
+    interagirText.destroy();
+    interagirText = this.add.text(coin.x-45, coin.y-30,  "\"O\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
+    if(keyO.isDown){
+        coinsInventory+=5;
+        coin.destroy();
+        interagirText.destroy();
+    }
+}
+pickUpitemInvisibility(player,itemInvisibility){
+    interagirText.destroy();
+    interagirText = this.add.text(itemInvisibility.x-45, itemInvisibility.y-30,  "\"O\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
+    if(keyO.isDown){
+        invinsibilityPotionInventory+=1;
+        itemInvisibility.destroy();
+        console.log("invisible")
+        interagirText.destroy();
+    }
+}
+pickUpitemSpeed(player,itemSpeed){
+    interagirText.destroy();
+    interagirText = this.add.text(itemSpeed.x-45, itemSpeed.y-30,  "\"O\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
+    if(keyO.isDown){
+        speedPotionInventory+=1;
+        itemSpeed.destroy();
+        console.log("speed")
+        interagirText.destroy();
+    }
+}
+pickUpitemBomb(player,itemBomb){
+    interagirText.destroy();
+    interagirText = this.add.text(itemBomb.x-45, itemBomb.y-30,  "\"O\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
+    if(keyO.isDown){
+        bombInventory+=1;
+        itemBomb.destroy();
+        console.log("bomb")
+        interagirText.destroy();
+    }
+}
+pickUpitemDagger(player,itemDagger){
+    
+    console.log("dagger")
+    interagirText.destroy();
+    interagirText = this.add.text(itemDagger.x-45, itemDagger.y-30,  "\"O\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
+    if(keyO.isDown){
+        daggerInventory+=5;
+        itemDagger.destroy();
+        interagirText.destroy();
+    }
+}
+activateInvinsibility(){
+        console.log("ok")
+        player.setAlpha(0.3)
+        invinsibilityPotionInventory-=1;
+        invinsibilityActive=true
+        this.time.delayedCall(5000, this.stopInvinsibility, null, this);
+
+}
+stopInvinsibility(){
+    player.setAlpha(1)
+    invinsibilityActive=false
+}
+activateSpeed(){
+        console.log("ok")
+        speed=200
+        speedPotionInventory-=1;
+        speedActive=true
+        this.time.delayedCall(5000, this.stopSpeed, null, this);
+
+}
+stopSpeed(){
+    speed=100
+    speedActive=false
+}
+openChest(player, chest){
+    console.log(chest.y)
+    interagirText.destroy();
+    interagirText = this.add.text(chest.x-45, chest.y-30,  "\"O\" pour intéragir",{ fill:'#fff',fontSize:10}).setDepth(3);  
+
+    if(keyO.isDown){
+        console.log("c'estcool")
+        keyO.reset();
+        chest.destroy();
+        interagirText.destroy();
+        var randomChestDrop = Phaser.Math.Between(0, 5);
+        console.log(randomChestDrop)
+        if(randomChestDrop==0){
+            this.coins.create(chest.x+10, chest.y, 'coin').setScale(0.05)
+        }
+        if(randomChestDrop==1){
+            this.itemHearts.create(chest.x+10, chest.y, 'heart').setScale(0.05)
+        }
+        if(randomChestDrop==2){
+            this.itemBombs.create(chest.x+10, chest.y, 'itemBomb').setScale(0.1)
+        }
+        if(randomChestDrop==3){
+            this.itemSpeeds.create(chest.x+10, chest.y, 'speedPotion').setScale(0.025)
+        }
+        if(randomChestDrop==4){
+            this.itemInvisibilities.create(chest.x+10, chest.y, 'invinsibilityPotion').setScale(0.05)
+        }
+        if(randomChestDrop==5){
+            this.itemDaggers.create(chest.x, chest.y, 'dagger').setScale(0.05)
+        }
+
+
+        var randomChestDrop = Phaser.Math.Between(0, 5);
+        console.log(randomChestDrop)
+        if(randomChestDrop==0){
+            this.coins.create(chest.x, chest.y, 'coin').setScale(0.05)
+        }
+        if(randomChestDrop==1){
+            this.itemHearts.create(chest.x-5, chest.y-5, 'heart').setScale(0.05)
+        }
+        if(randomChestDrop==2){
+            this.itemBombs.create(chest.x-5, chest.y-5, 'itemBomb').setScale(0.1)
+        }
+        if(randomChestDrop==3){
+            this.itemSpeeds.create(chest.x-5, chest.y-5, 'speedPotion').setScale(0.025)
+        }
+        if(randomChestDrop==4){
+            this.itemInvisibilities.create(chest.x-5, chest.y-5, 'invinsibilityPotion').setScale(0.05)
+        }
+        if(randomChestDrop==5){
+            this.itemDaggers.create(chest.x, chest.y, 'dagger').setScale(0.05)
+        }
+    }
+}
+useStairsGoUp(player, stairs){
+    interagirText.destroy();
+    interagirText = this.add.text(stairs.x-45, stairs.y-30,  "\"O\" pour intéragir",{ fill:'#fff',fontSize:10}).setDepth(3);  
+    if(keyO.isDown){
+        playerXSpawn=player.x;
+        playerYSpawn=player.y;
+        keyO.reset();
+        interagirText.destroy();
+        dungeon+=1
+        this.cameras.main.fadeOut(1000, 0, 0, 0)
+        this.time.delayedCall(1000, this.restartScene, null, this);
+    }
+}
+useStairsGoDown(player, stairs){
+    interagirText.destroy();
+    interagirText = this.add.text(stairs.x-45, stairs.y-30,  "\"O\" pour intéragir",{ fill:'#fff',fontSize:10}).setDepth(3);  
+    if(keyO.isDown){
+        playerXSpawn=player.x;
+        playerYSpawn=player.y;
+        keyO.reset();
+        interagirText.destroy();
+        dungeon-=1
+        this.cameras.main.fadeOut(1000, 0, 0, 0)
+        this.time.delayedCall(1000, this.restartScene, null, this);
+
+    }
+}
+restartScene(){
+    speed=100
+    invinsibilityActive=false;
+    speedActive=false;
+    this.scene.restart();
+}
+playerGoInvincible(){
+ playerInvincible=true;
+ this.invicibleAfterHitAlpha0;
+ this.time.delayedCall(100, this.invincibleAfterHitAlpha1, null, this);
+ this.time.delayedCall(200, this.invincibleAfterHitAlpha0, null, this);
+ this.time.delayedCall(300, this.invincibleAfterHitAlpha1, null, this);
+ this.time.delayedCall(400, this.invincibleAfterHitAlpha0, null, this);
+ this.time.delayedCall(500, this.invincibleAfterHitAlpha1, null, this);           
+ this.time.delayedCall(600, this.invincibleAfterHitAlpha0, null, this);
+ this.time.delayedCall(700, this.invincibleAfterHitAlpha1, null, this);
+ this.time.delayedCall(800, this.invincibleAfterHitAlpha0, null, this);
+ this.time.delayedCall(900, this.invincibleAfterHitAlpha1, null, this);
+ this.time.delayedCall(1000, this.invincibleOff, null, this);
+
+
+}
+invincibleOff(){
+playerInvincible=false;
+player.setTint(0xffffff)
+
+}
+invincibleAfterHitAlpha0(){
+player.setAlpha(0);
+}
+invincibleAfterHitAlpha1(){
+player.setAlpha(1);
+player.setTint(0xff0000)
+}
+death(){
+    this.physics.pause();
+    this.physics.add.sprite(640,360, 'deathScreen').setScale(0.5).setScrollFactor(0).setDepth(5);
+}
+}
+
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var config = {
+
+type: Phaser.AUTO,
+width: 1280,
+height: 720,
+backgroundColor: '#538192',
+pixelArt: true,
+physics: {
+    default: 'arcade',
+    arcade: {
+        gravity: { y: 0 },
+        debug: false,
+        fps: 60
+    },
+},
+    input: {
+        
+        gamepad: true
+    },
+scene: [Preloader, Game]
+};
+
+
+var speed = 100;
+var keyO;
+var keyB;
+var keyI;
+var keyP;
+var keyM
+var keyZ;
+var keyS;
+var keyD;
+var keyQ;
+var spaceBar;
+var player;
+var playerDirection = "RIGHT";
+var bombs;
+var bombExplosion;
+var daggers;
+var dagger;
+var delaiLancerArmeBool=true
+var delaiLancerArmeReset=30
+var delaiLancerArme=delaiLancerArmeReset
+var delaiLancerBombBool=true
+var delaiLancerBombReset=150
+var delaiLancerBomb=delaiLancerBombReset
+var heart1
+var heart2
+var heart3 
+var heart4
+var heart5
+var heartLeft=5
+var enemyBombExplosion;
+var playerInvincible = false;
+var invinsibilityPotionInventory=0;
+var invinsibilityPotionText;
+var speedPotionInventory=10;
+var speedPotionText;
+var inventorySpeedPotion;
+var coinsInventory=0;
+var coinsText;
+var inventoryCoins;
+var inventoryInvinsibilityPotion;
+var bombInventory = 100
+var bombText;
+var inventoryBomb;
+var daggerText;
+var daggerInventory=10;
+var inventoryDagger;
+var itemHeartDrop;
+var invinsibilityActive=false;
+var speedActive=false;
+var pauseActive=false;
+var inventoryBackground;
+var interagirText;
+var playerInvincible;
+var dungeon = 0
+var playerXSpawn = 128
+var playerYSpawn = 128
+var itemDaggers;
+var daggers;
+var game = new Phaser.Game(config);
+
+        </script>
+
+</body>
+</html>
