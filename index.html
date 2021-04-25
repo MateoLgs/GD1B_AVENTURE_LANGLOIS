@@ -19,6 +19,7 @@ preload() {
 this.load.image('tiles', './assets/dungeonTiles.png');
 this.load.tilemapTiledJSON('dungeon', './assets/dungeon1.json')
 this.load.tilemapTiledJSON('dungeon2', './assets/dungeon2.json')
+this.load.tilemapTiledJSON('dungeon3', './assets/dungeon3.json')
 
 this.load.image('deathScreen', 'assets/deathScreen.jpg')
 this.load.image('player', 'assets/player.jpg')
@@ -35,7 +36,7 @@ this.load.image('heartEmpty', 'assets/heartEmpty.png')
 this.load.image('coin', 'assets/coin.png')
 this.load.image('chest', 'assets/chest.jpg')
 this.load.image('stairs', 'assets/stairs.png')
-this.load.image('stairsGoUp', 'assets/stairsGoUp.png')
+this.load.image('stairsGoUp', 'assets/stairsGoUp.jpg')
 this.load.image('inventoryBackground', 'assets/inventoryBackground.jpg')
 this.load.image('inventoryBackgroundIngame', 'assets/inventoryBackgroundIngame.png')
 }
@@ -79,12 +80,15 @@ create() {
     if(dungeon==1){
         this.map = this.make.tilemap({key : 'dungeon2'})
     }
+    if(dungeon==2){
+        this.map = this.make.tilemap({key : 'dungeon3'})
+    }
   
     const tileset = this.map.addTilesetImage('dungeonTiles', 'tiles')
 
     const ground = this.map.createStaticLayer('Ground',tileset)
-    this.map.createStaticLayer('wallsNoCollideDown',tileset).setDepth(2);
-    this.map.createStaticLayer('wallsNoCollideTop',tileset).setDepth(-1);
+    const wallsNoCollideDown = this.map.createStaticLayer('wallsNoCollideDown',tileset).setDepth(2);
+    const wallsNoCollideTop = this.map.createStaticLayer('wallsNoCollideTop',tileset).setDepth(0);
 
     const wallsLayer =  this.map.createStaticLayer('Walls', tileset)
     wallsLayer.setCollisionByExclusion(-1, true);
@@ -127,22 +131,22 @@ create() {
 
 
         ////////////////////////////////////////////////////////////////////////
-    ////////////////////ITEM BOMB//////////////////////////////////////////
+    ////////////////////ITEM DAGGERS//////////////////////////////////////////
     this.itemDaggers = this.physics.add.group({
         immovable:true
     });
    
-   // const itemBombObjects = this.map.getObjectLayer('itemDagger').objects;
+    const itemDaggerObjects = this.map.getObjectLayer('itemDagger').objects;
 
 
-  /*  for (const itemDagger of itemDaggerObjects) {
+    for (const itemDagger of itemDaggerObjects) {
     this.itemDaggers.create(itemDagger.x, itemDagger.y, 'dagger')
         .setOrigin(0.5,0.5)
-        .setScale(0.1)
+        .setScale(0.025)
         .setDepth(1)
-}*/
+}
 for (const itemDagger of this.itemDaggers.children.entries) {
-    this.physics.add.overlap(player, itemDagger, this.pickUpitemDaggers, null, this);
+    this.physics.add.overlap(player, itemDagger, this.pickUpitemDagger, null, this);
 }
     this.physics.add.overlap(player, this.itemDaggers, this.pickUpitemDagger, null, this);
 
@@ -158,7 +162,7 @@ for (const itemDagger of this.itemDaggers.children.entries) {
     for (const itemBomb of itemBombObjects) {
     this.itemBombs.create(itemBomb.x, itemBomb.y, 'itemBomb')
         .setOrigin(0.5,0.5)
-        .setScale(0.1)
+        .setScale(0.025)
         .setDepth(1)
 }
 for (const itemBomb of this.itemBombs.children.entries) {
@@ -237,7 +241,7 @@ for (const itemSpeed of this.itemSpeeds.children.entries) {
     for (const itemInvisibility of itemInvisibilityObject) {
     this.itemInvisibilities.create(itemInvisibility.x, itemInvisibility.y, 'invinsibilityPotion')
         .setOrigin(0.5,0.5)
-        .setScale(0.1)
+        .setScale(0.05)
         .setDepth(1)
 }
 for (const itemInvisibility of this.itemInvisibilities.children.entries) {
@@ -257,7 +261,7 @@ for (const itemInvisibility of this.itemInvisibilities.children.entries) {
     for (const coin of coinObjects) {
     this.coins.create(coin.x, coin.y, 'coin')
         .setOrigin(0.5,0.5)
-        .setScale(0.05)
+        .setScale(0.025)
         .setDepth(1)
 }
 for (const coin of this.coins.children.entries) {
@@ -277,7 +281,7 @@ this.physics.add.overlap(player, this.coins, this.pickUpCoin, null, this);
     for (const escalierGoUp of escalierGoUpObjects) {
     this.escaliersGoUp.create(escalierGoUp.x, escalierGoUp.y, 'stairsGoUp')
         .setOrigin(0.5,0.5)
-        .setScale(0.05)
+        .setScale(0.1)
         .setDepth(1)
 }
 for (const escalierGoUp of this.escaliersGoUp.children.entries) {
@@ -312,7 +316,7 @@ for (const escalierGoDown of this.escaliersGoDown.children.entries) {
     for (const itemHeart of itemHeartObjects) {
     this.itemHearts.create(itemHeart.x, itemHeart.y, 'heart')
         .setOrigin(0.5,0.5)
-        .setScale(0.05)
+        .setScale(0.025)
         .setDepth(1)
 }
 for (const itemHeart of this.itemHearts.children.entries) {
@@ -338,6 +342,8 @@ for (const enemyBomb of this.enemyBombs.children.entries) {
 this.physics.add.overlap(player, enemyBomb, this.contactBombPlayer, null, this);
 this.physics.add.overlap(daggers, enemyBomb, this.contactDaggerBomb, null, this);
 this.physics.add.collider(wallsLayer, enemyBomb);
+this.physics.add.collider(wallsNoCollideDown, enemyBomb);
+this.physics.add.collider(wallsNoCollideTop, enemyBomb);
 enemyBomb.direction="UP"
 }
 const probaDropBomb = ["heart","invinsibility"]
@@ -368,19 +374,22 @@ this.physics.add.overlap(this.destroyableWalls, this.enemyBombExplosions, this.d
     for (const enemyFollower of enemyFollowerObjects) {
     this.enemyFollowers.create(enemyFollower.x, enemyFollower.y, 'enemyFollower')
         .setOrigin(0.5,0.5)
-        .setScale(0.1)
+        .setScale(0.05)
 }
 for (const enemyFollower of this.enemyFollowers.children.entries) {
 this.physics.add.collider(player, enemyFollower, this.contactFollowerPlayer, null, this);
 this.physics.add.collider(daggers, enemyFollower, this.contactDaggerFollower, null, this)
 this.physics.add.collider(wallsLayer, enemyFollower);
+this.physics.add.collider(wallsNoCollideDown, enemyFollower);
+this.physics.add.collider(wallsNoCollideTop, enemyFollower);
+this.physics.add.collider(this.destroyableWalls, enemyFollower);
 this.physics.add.overlap(enemyFollower, this.bombExplosions, this.destroyFollower, null, this);
 }      
-    keyO = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.O);
-    keyB = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.B);
-    keyI = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I);
+    keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+    keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
     keyP = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
-    keyM = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
+    keyT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
     keyZ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
     keyS = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
     keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
@@ -390,6 +399,15 @@ this.physics.add.overlap(enemyFollower, this.bombExplosions, this.destroyFollowe
 
 update() {
 
+    if (this.input.gamepad.total === 0){
+            this.input.gamepad.once('connected', function (pad, button, index) {
+                paddle = pad;
+                padConnected = true;
+            }); 
+        }
+        else {
+            paddle = this.input.gamepad.pad1;
+        }
 
 if(heartLeft<=0){
     this.death();
@@ -397,7 +415,7 @@ if(heartLeft<=0){
 	
 if(invinsibilityActive==false){
     for (const enemyFollower of this.enemyFollowers.children.entries) {
-        this.physics.moveTo(enemyFollower, player.x, player.y, 15);
+        this.physics.moveTo(enemyFollower, player.x, player.y, 50);
     }
 }
 else if (invinsibilityActive==true){
@@ -425,6 +443,14 @@ if (enemyBomb.direction === 'UP') {
 
 } 
 
+if(delaiPauseBool == false){
+    delaiPause --
+    }
+    if (delaiPause <= 0 && delaiPauseBool == false)  
+  {
+    delaiPause = delaiPauseReset;
+    delaiPauseBool = true;
+  }
 
 if(delaiLancerArmeBool == false){
     delaiLancerArme --
@@ -462,7 +488,7 @@ if(delaiLancerArmeBool == false){
     }
 
 
-    if(keyM.isDown){
+    if(keyT.isDown){
         if(pauseActive==false){
             if(speedActive==false){
                 if(speedPotionInventory>0){
@@ -472,7 +498,7 @@ if(delaiLancerArmeBool == false){
         }
     }
 
-    if(keyI.isDown){
+    if(keyR.isDown){
         if(pauseActive==false){
             if(invinsibilityActive==false){
                 if(invinsibilityPotionInventory>0){
@@ -509,11 +535,91 @@ if(delaiLancerArmeBool == false){
             }
         }
     }
-    if(keyB.isDown && delaiLancerBombBool ==true){
+    if(keyA.isDown && delaiLancerBombBool ==true){
         if(pauseActive==false){
             if(bombInventory>0){
                 this.lancerBomb();
                 delaiLancerBombBool = false
+            }
+        }
+    }
+
+
+
+
+    if(padConnected){
+        if(paddle.L1 && delaiPauseBool == true){
+            
+            delaiPauseBool = false
+            console.log("cohgzogvziosv")
+
+            if (pauseActive==false){
+                pauseActive=true
+                this.physics.pause();
+                this.pauseInventory();
+            }
+            else if(pauseActive==true){
+                pauseActive=false
+                this.destroyPauseInventory();
+                this.physics.resume()
+            }
+        }
+
+
+        if(paddle.R2){
+            if(pauseActive==false){
+                if(speedActive==false){
+                    if(speedPotionInventory>0){
+                        this.activateSpeed();
+                    }
+                }
+            }
+        }
+
+        if(paddle.L2){
+            if(pauseActive==false){
+                if(invinsibilityActive==false){
+                    if(invinsibilityPotionInventory>0){
+                        this.activateInvinsibility();
+                    }
+                }
+            }
+        }
+
+
+        if(paddle.left){
+            player.setVelocity(-speed,0)
+            playerDirection = "LEFT";
+        }
+        if(paddle.right){
+            player.setVelocity(speed,0)
+            playerDirection = "RIGHT";
+        }
+        if(paddle.up){
+            player.setVelocity(0,-speed)
+            playerDirection = "UP";
+        }
+        if(paddle.down){
+            player.setVelocity(0,speed)
+            playerDirection = "DOWN";
+        }
+        if(this.cursors.up.isUp && this.cursors.down.isUp && this.cursors.right.isUp && this.cursors.left.isUp && keyQ.isUp && keyD.isUp && keyZ.isUp && keyS.isUp && !paddle.left && !paddle.right && !paddle.up && !paddle.down){
+            player.setVelocity(0,0)
+        }
+        if(paddle.A && delaiLancerArmeBool ==true){
+            if(pauseActive==false){
+                if(daggerInventory>0){
+                    this.lancerDague();
+                    delaiLancerArmeBool = false
+                }
+            }
+        }
+        if(paddle.B && delaiLancerBombBool ==true){
+            if(pauseActive==false){
+                if(bombInventory>0){
+                    this.lancerBomb();
+                    delaiLancerBombBool = false
+                }
             }
         }
     }
@@ -573,6 +679,7 @@ destroyEnemyBomb(enemyBomb){
         this.itemDaggers.create(enemyBomb.x, enemyBomb.y, 'dagger').setScale(0.05)
     }
 }
+
 contactFollowerPlayer(player,enemyFollower){
     this.destroyFollower(enemyFollower)
     this.damagePlayer();
@@ -593,7 +700,7 @@ contactDaggerBomb(dagger,enemyBomb){
     this.destroyEnemyBomb(enemyBomb);
 }
 lancerBomb(){
-keyB.reset()
+keyA.reset()
 if(playerDirection=="UP")
 {
     var bomb = bombs.create(player.x, player.y, 'itemBomb').setScale(0.05);
@@ -719,65 +826,111 @@ stopInvinciblePLayer(){
 }
 pickUpItemHeart(player,itemHeart){
     if(heartLeft<5){
-    interagirText.destroy();
-    interagirText = this.add.text(itemHeart.x-45, itemHeart.y-30,  "\"O\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
-    if(keyO.isDown){
-        heartLeft+=1;
-        this.changeHeart();
-        itemHeart.destroy();
         interagirText.destroy();
-        
+        interagirText = this.add.text(itemHeart.x-45, itemHeart.y-30,  "\"E\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
+        if(keyE.isDown){
+            heartLeft+=1;
+            this.changeHeart();
+            itemHeart.destroy();
+            interagirText.destroy();
+        }
+        if(padConnected){
+            if(paddle.X){
+                heartLeft+=1;
+                this.changeHeart();
+                itemHeart.destroy();
+                interagirText.destroy();
+            }
+        }
     }
-}
 }
 pickUpCoin(player,coin){
     interagirText.destroy();
-    interagirText = this.add.text(coin.x-45, coin.y-30,  "\"O\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
-    if(keyO.isDown){
+    interagirText = this.add.text(coin.x-45, coin.y-30,  "\"E\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
+    if(keyE.isDown){
         coinsInventory+=5;
         coin.destroy();
         interagirText.destroy();
     }
+    if(padConnected){
+        if(paddle.X){
+            coinsInventory+=5;
+            coin.destroy();
+            interagirText.destroy();
+        }
+    }
 }
 pickUpitemInvisibility(player,itemInvisibility){
     interagirText.destroy();
-    interagirText = this.add.text(itemInvisibility.x-45, itemInvisibility.y-30,  "\"O\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
-    if(keyO.isDown){
+    interagirText = this.add.text(itemInvisibility.x-45, itemInvisibility.y-30,  "\"E\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
+    if(keyE.isDown){
         invinsibilityPotionInventory+=1;
         itemInvisibility.destroy();
         console.log("invisible")
         interagirText.destroy();
     }
+    if(padConnected){
+        if(paddle.X){
+            invinsibilityPotionInventory+=1;
+            itemInvisibility.destroy();
+            console.log("invisible")
+            interagirText.destroy();
+        }
+    }
 }
 pickUpitemSpeed(player,itemSpeed){
     interagirText.destroy();
-    interagirText = this.add.text(itemSpeed.x-45, itemSpeed.y-30,  "\"O\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
-    if(keyO.isDown){
+    interagirText = this.add.text(itemSpeed.x-45, itemSpeed.y-30,  "\"E\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
+    if(keyE.isDown){
         speedPotionInventory+=1;
         itemSpeed.destroy();
         console.log("speed")
         interagirText.destroy();
     }
+    if(padConnected){
+        if(paddle.X){
+            speedPotionInventory+=1;
+            itemSpeed.destroy();
+            console.log("speed")
+            interagirText.destroy();
+        }
+    }
 }
 pickUpitemBomb(player,itemBomb){
     interagirText.destroy();
-    interagirText = this.add.text(itemBomb.x-45, itemBomb.y-30,  "\"O\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
-    if(keyO.isDown){
+    interagirText = this.add.text(itemBomb.x-45, itemBomb.y-30,  "\"E\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
+    if(keyE.isDown){
         bombInventory+=1;
         itemBomb.destroy();
         console.log("bomb")
         interagirText.destroy();
+    }
+    if(padConnected){
+        if(paddle.X){
+            bombInventory+=1;
+            itemBomb.destroy();
+            console.log("bomb")
+            interagirText.destroy();
+        }
     }
 }
 pickUpitemDagger(player,itemDagger){
     
     console.log("dagger")
     interagirText.destroy();
-    interagirText = this.add.text(itemDagger.x-45, itemDagger.y-30,  "\"O\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
-    if(keyO.isDown){
+    interagirText = this.add.text(itemDagger.x-45, itemDagger.y-30,  "\"E\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
+    if(keyE.isDown){
         daggerInventory+=5;
         itemDagger.destroy();
         interagirText.destroy();
+    }
+    
+    if(padConnected){
+        if(paddle.X){
+            daggerInventory+=5;
+            itemDagger.destroy();
+            interagirText.destroy();
+        }
     }
 }
 activateInvinsibility(){
@@ -807,29 +960,38 @@ stopSpeed(){
 openChest(player, chest){
     console.log(chest.y)
     interagirText.destroy();
-    interagirText = this.add.text(chest.x-45, chest.y-30,  "\"O\" pour intéragir",{ fill:'#fff',fontSize:10}).setDepth(3);  
+    interagirText = this.add.text(chest.x-45, chest.y-30,  "\"E\" pour intéragir",{ fill:'#fff',fontSize:10}).setDepth(3);  
 
-    if(keyO.isDown){
-        console.log("c'estcool")
-        keyO.reset();
+    if(keyE.isDown){
+        this.openChestRandom(player, chest);
+    }
+    if(padConnected){
+        if(paddle.X){
+            this.openChestRandom(player, chest);
+        }
+    }
+}
+openChestRandom(player, chest){
+    console.log("c'estcool")
+        keyE.reset();
         chest.destroy();
         interagirText.destroy();
         var randomChestDrop = Phaser.Math.Between(0, 5);
         console.log(randomChestDrop)
         if(randomChestDrop==0){
-            this.coins.create(chest.x+10, chest.y, 'coin').setScale(0.05)
+            this.coins.create(chest.x+10, chest.y, 'coin').setScale(0.025)
         }
         if(randomChestDrop==1){
-            this.itemHearts.create(chest.x+10, chest.y, 'heart').setScale(0.05)
+            this.itemHearts.create(chest.x+10, chest.y, 'heart').setScale(0.025)
         }
         if(randomChestDrop==2){
-            this.itemBombs.create(chest.x+10, chest.y, 'itemBomb').setScale(0.1)
+            this.itemBombs.create(chest.x+10, chest.y, 'itemBomb').setScale(0.025)
         }
         if(randomChestDrop==3){
             this.itemSpeeds.create(chest.x+10, chest.y, 'speedPotion').setScale(0.025)
         }
         if(randomChestDrop==4){
-            this.itemInvisibilities.create(chest.x+10, chest.y, 'invinsibilityPotion').setScale(0.05)
+            this.itemInvisibilities.create(chest.x+10, chest.y, 'invinsibilityPotion').setScale(0.025)
         }
         if(randomChestDrop==5){
             this.itemDaggers.create(chest.x, chest.y, 'dagger').setScale(0.05)
@@ -856,33 +1018,53 @@ openChest(player, chest){
         if(randomChestDrop==5){
             this.itemDaggers.create(chest.x, chest.y, 'dagger').setScale(0.05)
         }
-    }
 }
 useStairsGoUp(player, stairs){
     interagirText.destroy();
-    interagirText = this.add.text(stairs.x-45, stairs.y-30,  "\"O\" pour intéragir",{ fill:'#fff',fontSize:10}).setDepth(3);  
-    if(keyO.isDown){
+    interagirText = this.add.text(stairs.x-45, stairs.y-30,  "\"E\" pour intéragir",{ fill:'#fff',fontSize:10}).setDepth(3);  
+    if(keyE.isDown){
         playerXSpawn=player.x;
         playerYSpawn=player.y;
-        keyO.reset();
+        keyE.reset();
         interagirText.destroy();
         dungeon+=1
         this.cameras.main.fadeOut(1000, 0, 0, 0)
         this.time.delayedCall(1000, this.restartScene, null, this);
     }
+    if(padConnected){
+        if(paddle.X){
+            playerXSpawn=player.x;
+            playerYSpawn=player.y;
+            keyE.reset();
+            interagirText.destroy();
+            dungeon+=1
+            this.cameras.main.fadeOut(1000, 0, 0, 0)
+            this.time.delayedCall(1000, this.restartScene, null, this);
+        }
+    }
 }
 useStairsGoDown(player, stairs){
     interagirText.destroy();
-    interagirText = this.add.text(stairs.x-45, stairs.y-30,  "\"O\" pour intéragir",{ fill:'#fff',fontSize:10}).setDepth(3);  
-    if(keyO.isDown){
+    interagirText = this.add.text(stairs.x-45, stairs.y-30,  "\"E\" pour intéragir",{ fill:'#fff',fontSize:10}).setDepth(3);  
+    if(keyE.isDown){
         playerXSpawn=player.x;
         playerYSpawn=player.y;
-        keyO.reset();
+        keyE.reset();
         interagirText.destroy();
         dungeon-=1
         this.cameras.main.fadeOut(1000, 0, 0, 0)
         this.time.delayedCall(1000, this.restartScene, null, this);
-
+    }
+    if(padConnected){
+        if(paddle.X){
+            playerXSpawn=player.x;
+            playerYSpawn=player.y;
+            keyE.reset();
+            interagirText.destroy();
+            dungeon-=1
+            this.cameras.main.fadeOut(1000, 0, 0, 0)
+            this.time.delayedCall(1000, this.restartScene, null, this);
+        }
     }
 }
 restartScene(){
@@ -954,7 +1136,6 @@ physics: {
     },
 },
     input: {
-        
         gamepad: true
     },
 scene: [Preloader, Game]
@@ -962,11 +1143,11 @@ scene: [Preloader, Game]
 
 
 var speed = 100;
-var keyO;
-var keyB;
-var keyI;
+var keyE;
+var keyA;
+var keyR;
 var keyP;
-var keyM
+var keyT
 var keyZ;
 var keyS;
 var keyD;
@@ -978,6 +1159,9 @@ var bombs;
 var bombExplosion;
 var daggers;
 var dagger;
+var delaiPauseBool=true
+var delaiPauseReset=30
+var delaiPause=delaiPauseReset
 var delaiLancerArmeBool=true
 var delaiLancerArmeReset=30
 var delaiLancerArme=delaiLancerArmeReset
@@ -994,14 +1178,14 @@ var enemyBombExplosion;
 var playerInvincible = false;
 var invinsibilityPotionInventory=0;
 var invinsibilityPotionText;
-var speedPotionInventory=10;
+var speedPotionInventory=0;
 var speedPotionText;
 var inventorySpeedPotion;
 var coinsInventory=0;
 var coinsText;
 var inventoryCoins;
 var inventoryInvinsibilityPotion;
-var bombInventory = 100
+var bombInventory = 0
 var bombText;
 var inventoryBomb;
 var daggerText;
@@ -1019,6 +1203,8 @@ var playerXSpawn = 128
 var playerYSpawn = 128
 var itemDaggers;
 var daggers;
+var padConnected;
+var paddle;
 var game = new Phaser.Game(config);
 
         </script>

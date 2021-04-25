@@ -1,0 +1,19 @@
+Touches Clavier : 
+	-    ZQSD = déplacement
+	-    fleches = déplacement
+	-    Espace = Tir de Dagues
+	-    A = Tir De Bombes
+	-    E = Intéragir
+	-    R = Utiliser Potion de Vitesse
+	-    T = Utiliser Potion D'invisibilité
+	-    P = Inventaire / pause
+
+Touches Manette :
+	-     Croix Directionnelle = Déplacement
+	-     A = Tir de Dagues
+	-     B = Tir De Bombes
+	-     X = Intéragir
+	-     LB = Utiliser Potion d'Invisibilité
+	-     RB = Utiliser Potion de Vitesse
+	-     LT = Inventaire / pause 
+	
