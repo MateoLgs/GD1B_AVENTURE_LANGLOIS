@@ -22,31 +22,41 @@ this.load.tilemapTiledJSON('dungeon2', './assets/dungeon2.json')
 this.load.tilemapTiledJSON('dungeon3', './assets/dungeon3.json')
 
 this.load.image('deathScreen', 'assets/deathScreen.jpg')
-this.load.image('player', 'assets/player.jpg')
+this.load.image('menuScreen', 'assets/menuScreen.jpg')
+this.load.image('player', 'assets/player.png')
 this.load.image('enemyBomb', 'assets/enemyBomb.png')
 this.load.image('enemyBombExplosion', 'assets/enemyBombExplosion.jpg')
 this.load.image('bombExplosion', 'assets/bombExplosion.png')
 this.load.image('enemyFollower', 'assets/enemyFollower.png')
-this.load.image('dagger', 'assets/dagger.jpg')
+this.load.image('dagger', 'assets/dagger.png')
 this.load.image('invinsibilityPotion', 'assets/invinsibilityPotion.png')
 this.load.image('speedPotion', 'assets/speedPotion.png')
 this.load.image('itemBomb', 'assets/bomb.png')
 this.load.image('heart', 'assets/heart.png')
 this.load.image('heartEmpty', 'assets/heartEmpty.png')
 this.load.image('coin', 'assets/coin.png')
-this.load.image('chest', 'assets/chest.jpg')
+this.load.image('chest', 'assets/chest.png')
 this.load.image('stairs', 'assets/stairs.png')
 this.load.image('stairsGoUp', 'assets/stairsGoUp.jpg')
 this.load.image('inventoryBackground', 'assets/inventoryBackground.jpg')
 this.load.image('inventoryBackgroundIngame', 'assets/inventoryBackgroundIngame.png')
+
+this.load.spritesheet('spritesheetPlayer', 'assets/playerSpritesheet.png', { frameWidth: 34, frameHeight: 48 });
 }
 
 create() {
-  
+    var startGame = this.physics.add.sprite(640,360, 'menuScreen').setScrollFactor(0).setDepth(5).setInteractive();
+    startGame.on('pointerdown', () => {
+        this.changeMenuLevel();        
+    })  
 }
 
 update() {
-    this.scene.start("Game")
+
+
+}
+changeMenuLevel(){
+    this.scene.start("Game");
 }
 }
 
@@ -92,10 +102,40 @@ create() {
 
     const wallsLayer =  this.map.createStaticLayer('Walls', tileset)
     wallsLayer.setCollisionByExclusion(-1, true);
-    player = this.physics.add.sprite(playerXSpawn,playerYSpawn,'player').setScale(0.1)
+    player = this.physics.add.sprite(playerXSpawn,playerYSpawn,'player').setScale(0.5).setDepth(1)
     this.physics.add.collider(player, wallsLayer)
 
+this.anims.create({
+    key: 'moveDown',
+    frames: this.anims.generateFrameNumbers('spritesheetPlayer',  {start: 0, end: 3 }),
+    frameRate: 10,
+    repeat: -1
+});
+this.anims.create({
+    key: 'moveLeft',
+    frames: this.anims.generateFrameNumbers('spritesheetPlayer',  {start: 4, end: 7 }),
+    frameRate: 10,
+    repeat: -1
+});
+this.anims.create({
+    key: 'moveRight',
+    frames: this.anims.generateFrameNumbers('spritesheetPlayer',  {start: 8, end: 11 }),
+    frameRate: 10,
+    repeat: -1
+});
+this.anims.create({
+    key: 'moveUp',
+    frames: this.anims.generateFrameNumbers('spritesheetPlayer',  {start: 12, end: 15 }),
+    frameRate: 10,
+    repeat: -1
+});
 
+this.anims.create({
+    key: 'idle',
+    frames: this.anims.generateFrameNumbers('spritesheetPlayer',  {start: 0, end: 0 }),
+    frameRate: 10,
+    repeat: -1
+});
 
 
 
@@ -159,11 +199,10 @@ for (const itemDagger of this.itemDaggers.children.entries) {
     const itemBombObjects = this.map.getObjectLayer('itemBomb').objects;
 
 
-    for (const itemBomb of itemBombObjects) {
+for (const itemBomb of itemBombObjects) {
     this.itemBombs.create(itemBomb.x, itemBomb.y, 'itemBomb')
         .setOrigin(0.5,0.5)
         .setScale(0.025)
-        .setDepth(1)
 }
 for (const itemBomb of this.itemBombs.children.entries) {
     this.physics.add.overlap(player, itemBomb, this.pickUpitemBomb, null, this);
@@ -182,8 +221,7 @@ for (const itemBomb of this.itemBombs.children.entries) {
     for (const chest of chestObject) {
     this.chests.create(chest.x, chest.y, 'chest')
         .setOrigin(0.5,0.5)
-        .setScale(0.04)
-        .setDepth(1)
+        
 }
 for (const chest of this.chests.children.entries) {
     this.physics.add.overlap(player, chest, this.openChest, null, this);
@@ -202,7 +240,6 @@ for (const chest of this.chests.children.entries) {
     this.destroyableWalls.create(destroyableWall.x, destroyableWall.y, 'invinsibilityPotion')
         .setOrigin(0.5,0.5)
         .setScale(0.04)
-        .setDepth(1)
 }
 for (const destroyableWall of this.destroyableWalls.children.entries) {
     this.physics.add.overlap(daggers, destroyableWall, this.daggerDestroyableWalls, null, this);
@@ -223,7 +260,6 @@ for (const destroyableWall of this.destroyableWalls.children.entries) {
     this.itemSpeeds.create(itemSpeed.x, itemSpeed.y, 'speedPotion')
         .setOrigin(0.5,0.5)
         .setScale(0.02)
-        .setDepth(1)
 }
 for (const itemSpeed of this.itemSpeeds.children.entries) {
     this.physics.add.overlap(player, itemSpeed, this.pickUpitemSpeed, null, this);
@@ -242,7 +278,6 @@ for (const itemSpeed of this.itemSpeeds.children.entries) {
     this.itemInvisibilities.create(itemInvisibility.x, itemInvisibility.y, 'invinsibilityPotion')
         .setOrigin(0.5,0.5)
         .setScale(0.05)
-        .setDepth(1)
 }
 for (const itemInvisibility of this.itemInvisibilities.children.entries) {
     this.physics.add.overlap(player, itemInvisibility, this.pickUpitemInvisibility, null, this);
@@ -261,8 +296,8 @@ for (const itemInvisibility of this.itemInvisibilities.children.entries) {
     for (const coin of coinObjects) {
     this.coins.create(coin.x, coin.y, 'coin')
         .setOrigin(0.5,0.5)
-        .setScale(0.025)
-        .setDepth(1)
+        .setScale(0.5)
+       
 }
 for (const coin of this.coins.children.entries) {
     this.physics.add.overlap(player, coin, this.pickUpCoin, null, this);
@@ -282,7 +317,7 @@ this.physics.add.overlap(player, this.coins, this.pickUpCoin, null, this);
     this.escaliersGoUp.create(escalierGoUp.x, escalierGoUp.y, 'stairsGoUp')
         .setOrigin(0.5,0.5)
         .setScale(0.1)
-        .setDepth(1)
+        
 }
 for (const escalierGoUp of this.escaliersGoUp.children.entries) {
     this.physics.add.overlap(player, escalierGoUp, this.useStairsGoUp, null, this);
@@ -425,12 +460,10 @@ else if (invinsibilityActive==true){
 }
 for (const enemyBomb of this.enemyBombs.children.entries) {
 if (enemyBomb.body.blocked.down) {
-    console.log("up")
     enemyBomb.direction = 'UP';
 }
 
 if (enemyBomb.body.blocked.up) {
-    console.log("down")
     enemyBomb.direction = 'DOWN';
 }
 
@@ -510,22 +543,27 @@ if(delaiLancerArmeBool == false){
 
     if(this.cursors.left.isDown || keyQ.isDown){
         player.setVelocity(-speed,0)
-         playerDirection = "LEFT";
+      player.play('moveLeft', true);
+        playerDirection = "LEFT";
     }
     if(this.cursors.right.isDown || keyD.isDown){
         player.setVelocity(speed,0)
+      player.play('moveRight', true);
          playerDirection = "RIGHT";
     }
     if(this.cursors.up.isDown || keyZ.isDown){
         player.setVelocity(0,-speed)
+      player.play('moveUp', true);
         playerDirection = "UP";
     }
     if(this.cursors.down.isDown || keyS.isDown){
         player.setVelocity(0,speed)
+      player.play('moveDown', true);
          playerDirection = "DOWN";
     }
     if(this.cursors.up.isUp && this.cursors.down.isUp && this.cursors.right.isUp && this.cursors.left.isUp && keyQ.isUp && keyD.isUp && keyZ.isUp && keyS.isUp){
         player.setVelocity(0,0)
+      player.play('idle', true);
     }
     if(spaceBar.isDown && delaiLancerArmeBool ==true){
         if(pauseActive==false){
@@ -551,7 +589,6 @@ if(delaiLancerArmeBool == false){
         if(paddle.L1 && delaiPauseBool == true){
             
             delaiPauseBool = false
-            console.log("cohgzogvziosv")
 
             if (pauseActive==false){
                 pauseActive=true
@@ -589,22 +626,27 @@ if(delaiLancerArmeBool == false){
 
         if(paddle.left){
             player.setVelocity(-speed,0)
+      player.play('moveULeft', true);
             playerDirection = "LEFT";
         }
         if(paddle.right){
             player.setVelocity(speed,0)
+      player.play('moveRight', true);
             playerDirection = "RIGHT";
         }
         if(paddle.up){
             player.setVelocity(0,-speed)
+      player.play('moveUp', true);
             playerDirection = "UP";
         }
         if(paddle.down){
             player.setVelocity(0,speed)
+            player.play('moveDown', true);
             playerDirection = "DOWN";
         }
         if(this.cursors.up.isUp && this.cursors.down.isUp && this.cursors.right.isUp && this.cursors.left.isUp && keyQ.isUp && keyD.isUp && keyZ.isUp && keyS.isUp && !paddle.left && !paddle.right && !paddle.up && !paddle.down){
             player.setVelocity(0,0)
+      player.play('idle', true);
         }
         if(paddle.A && delaiLancerArmeBool ==true){
             if(pauseActive==false){
@@ -659,7 +701,6 @@ destroyEnemyBomb(enemyBomb){
     enemyBomb.destroy();
     this.time.delayedCall(1000, this.endExplosionEnemyBomb, null, this);
     var randomEnemyBombDrop = Phaser.Math.Between(0, 5);
-    console.log(randomEnemyBombDrop)
     if(randomEnemyBombDrop==0){
         this.coins.create(enemyBomb.x, enemyBomb.y, 'coin').setScale(0.05)
     }
@@ -679,7 +720,6 @@ destroyEnemyBomb(enemyBomb){
         this.itemDaggers.create(enemyBomb.x, enemyBomb.y, 'dagger').setScale(0.05)
     }
 }
-
 contactFollowerPlayer(player,enemyFollower){
     this.destroyFollower(enemyFollower)
     this.damagePlayer();
@@ -703,22 +743,22 @@ lancerBomb(){
 keyA.reset()
 if(playerDirection=="UP")
 {
-    var bomb = bombs.create(player.x, player.y, 'itemBomb').setScale(0.05);
+    var bomb = bombs.create(player.x, player.y, 'itemBomb').setScale(0.75);
     bomb.setVelocity(0, -200);
 }
 if(playerDirection=="DOWN")
 {
-    var bomb = bombs.create(player.x, player.y, 'itemBomb').setScale(0.05);
+    var bomb = bombs.create(player.x, player.y, 'itemBomb').setScale(0.75);
     bomb.setVelocity(0, 200);
 }
 if(playerDirection=="LEFT")
 {
-    var bomb = bombs.create(player.x, player.y, 'itemBomb').setScale(0.05);
+    var bomb = bombs.create(player.x, player.y, 'itemBomb').setScale(0.75);
     bomb.setVelocity(-200, 0);
 }
 if(playerDirection=="RIGHT")
 {
-    var bomb = bombs.create(player.x, player.y, 'itemBomb').setScale(0.05);
+    var bomb = bombs.create(player.x, player.y, 'itemBomb').setScale(0.75);
     bomb.setVelocity(200, 0);
 }
 bombInventory-=1;
@@ -736,28 +776,27 @@ lancerDague(){
     spaceBar.reset()
     if(playerDirection=="UP")
     {
-        var dagger = daggers.create(player.x, player.y, 'dagger').setScale(0.02);
+        var dagger = daggers.create(player.x, player.y, 'dagger').setScale(0.5);
         dagger.setVelocity(0, -200);
     }
     if(playerDirection=="DOWN")
     {
-        var dagger = daggers.create(player.x, player.y, 'dagger').setScale(0.02);
+        var dagger = daggers.create(player.x, player.y, 'dagger').setScale(0.5).setAngle(180);
         dagger.setVelocity(0, 200);
     }
     if(playerDirection=="LEFT")
     {
-        var dagger = daggers.create(player.x, player.y, 'dagger').setScale(0.02);
+        var dagger = daggers.create(player.x, player.y, 'dagger').setScale(0.5).setAngle(-90);
         dagger.setVelocity(-200, 0);
     }
     if(playerDirection=="RIGHT")
     {
-        var dagger = daggers.create(player.x, player.y, 'dagger').setScale(0.02);
+        var dagger = daggers.create(player.x, player.y, 'dagger').setScale(0.5).setAngle(90);
         dagger.setVelocity(200, 0);
     }
     daggerInventory-=1;
 }
 changeHeart(){
-console.log("Change Heart")
     heart1.destroy();
     heart2.destroy();
     heart3.destroy();
@@ -810,7 +849,6 @@ endExplosionBomb(){
     bombExplosion.destroy()
 }
 damagePlayer(){
-    console.log("test")
     if(playerInvincible==false){
     heartLeft-=1;
     playerInvincible=true
@@ -866,14 +904,12 @@ pickUpitemInvisibility(player,itemInvisibility){
     if(keyE.isDown){
         invinsibilityPotionInventory+=1;
         itemInvisibility.destroy();
-        console.log("invisible")
         interagirText.destroy();
     }
     if(padConnected){
         if(paddle.X){
             invinsibilityPotionInventory+=1;
             itemInvisibility.destroy();
-            console.log("invisible")
             interagirText.destroy();
         }
     }
@@ -884,14 +920,12 @@ pickUpitemSpeed(player,itemSpeed){
     if(keyE.isDown){
         speedPotionInventory+=1;
         itemSpeed.destroy();
-        console.log("speed")
         interagirText.destroy();
     }
     if(padConnected){
         if(paddle.X){
             speedPotionInventory+=1;
             itemSpeed.destroy();
-            console.log("speed")
             interagirText.destroy();
         }
     }
@@ -902,21 +936,18 @@ pickUpitemBomb(player,itemBomb){
     if(keyE.isDown){
         bombInventory+=1;
         itemBomb.destroy();
-        console.log("bomb")
         interagirText.destroy();
     }
     if(padConnected){
         if(paddle.X){
             bombInventory+=1;
             itemBomb.destroy();
-            console.log("bomb")
             interagirText.destroy();
         }
     }
 }
 pickUpitemDagger(player,itemDagger){
     
-    console.log("dagger")
     interagirText.destroy();
     interagirText = this.add.text(itemDagger.x-45, itemDagger.y-30,  "\"E\" pour rammasser",{ fill:'#fff',fontSize:10}).setDepth(3);  
     if(keyE.isDown){
@@ -934,7 +965,6 @@ pickUpitemDagger(player,itemDagger){
     }
 }
 activateInvinsibility(){
-        console.log("ok")
         player.setAlpha(0.3)
         invinsibilityPotionInventory-=1;
         invinsibilityActive=true
@@ -946,7 +976,6 @@ stopInvinsibility(){
     invinsibilityActive=false
 }
 activateSpeed(){
-        console.log("ok")
         speed=200
         speedPotionInventory-=1;
         speedActive=true
@@ -958,7 +987,6 @@ stopSpeed(){
     speedActive=false
 }
 openChest(player, chest){
-    console.log(chest.y)
     interagirText.destroy();
     interagirText = this.add.text(chest.x-45, chest.y-30,  "\"E\" pour intéragir",{ fill:'#fff',fontSize:10}).setDepth(3);  
 
@@ -972,12 +1000,10 @@ openChest(player, chest){
     }
 }
 openChestRandom(player, chest){
-    console.log("c'estcool")
         keyE.reset();
         chest.destroy();
         interagirText.destroy();
         var randomChestDrop = Phaser.Math.Between(0, 5);
-        console.log(randomChestDrop)
         if(randomChestDrop==0){
             this.coins.create(chest.x+10, chest.y, 'coin').setScale(0.025)
         }
@@ -999,7 +1025,6 @@ openChestRandom(player, chest){
 
 
         var randomChestDrop = Phaser.Math.Between(0, 5);
-        console.log(randomChestDrop)
         if(randomChestDrop==0){
             this.coins.create(chest.x, chest.y, 'coin').setScale(0.05)
         }
@@ -1185,7 +1210,7 @@ var coinsInventory=0;
 var coinsText;
 var inventoryCoins;
 var inventoryInvinsibilityPotion;
-var bombInventory = 0
+var bombInventory = 10
 var bombText;
 var inventoryBomb;
 var daggerText;
