@@ -16,7 +16,7 @@ constructor () {
     super('Preloader');
 }
 preload() {
-this.load.image('tiles', './assets/dungeonTiles.png');
+this.load.image('tiles', './assets/tileset.png');
 this.load.tilemapTiledJSON('dungeon', './assets/dungeon1.json')
 this.load.tilemapTiledJSON('dungeon2', './assets/dungeon2.json')
 this.load.tilemapTiledJSON('dungeon3', './assets/dungeon3.json')
@@ -36,12 +36,15 @@ this.load.image('heart', 'assets/heart.png')
 this.load.image('heartEmpty', 'assets/heartEmpty.png')
 this.load.image('coin', 'assets/coin.png')
 this.load.image('chest', 'assets/chest.png')
-this.load.image('stairs', 'assets/stairs.png')
+this.load.image('stairs', 'assets/stairs.jpg')
 this.load.image('stairsGoUp', 'assets/stairsGoUp.jpg')
 this.load.image('inventoryBackground', 'assets/inventoryBackground.jpg')
 this.load.image('inventoryBackgroundIngame', 'assets/inventoryBackgroundIngame.png')
+this.load.image('destroyableWalls', 'assets/destroyableWalls.png')
 
+this.load.spritesheet('spritesheetEnemyBomb', 'assets/enemyBombSpritesheet.png', { frameWidth: 26, frameHeight: 40 });
 this.load.spritesheet('spritesheetPlayer', 'assets/playerSpritesheet.png', { frameWidth: 34, frameHeight: 48 });
+this.load.spritesheet('spritesheetFollower', 'assets/ennemyFollowerSpritesheet.png', { frameWidth: 37, frameHeight: 34 });
 }
 
 create() {
@@ -94,7 +97,7 @@ create() {
         this.map = this.make.tilemap({key : 'dungeon3'})
     }
   
-    const tileset = this.map.addTilesetImage('dungeonTiles', 'tiles')
+    const tileset = this.map.addTilesetImage('tileset', 'tiles')
 
     const ground = this.map.createStaticLayer('Ground',tileset)
     const wallsNoCollideDown = this.map.createStaticLayer('wallsNoCollideDown',tileset).setDepth(2);
@@ -182,7 +185,7 @@ this.anims.create({
     for (const itemDagger of itemDaggerObjects) {
     this.itemDaggers.create(itemDagger.x, itemDagger.y, 'dagger')
         .setOrigin(0.5,0.5)
-        .setScale(0.025)
+        .setScale(0.5)
         .setDepth(1)
 }
 for (const itemDagger of this.itemDaggers.children.entries) {
@@ -237,9 +240,8 @@ for (const chest of this.chests.children.entries) {
 
 
     for (const destroyableWall of destroyableWallObject) {
-    this.destroyableWalls.create(destroyableWall.x, destroyableWall.y, 'invinsibilityPotion')
+    this.destroyableWalls.create(destroyableWall.x, destroyableWall.y, 'destroyableWalls')
         .setOrigin(0.5,0.5)
-        .setScale(0.04)
 }
 for (const destroyableWall of this.destroyableWalls.children.entries) {
     this.physics.add.overlap(daggers, destroyableWall, this.daggerDestroyableWalls, null, this);
@@ -259,7 +261,7 @@ for (const destroyableWall of this.destroyableWalls.children.entries) {
     for (const itemSpeed of itemSpeedObjects) {
     this.itemSpeeds.create(itemSpeed.x, itemSpeed.y, 'speedPotion')
         .setOrigin(0.5,0.5)
-        .setScale(0.02)
+        .setScale(0.35)
 }
 for (const itemSpeed of this.itemSpeeds.children.entries) {
     this.physics.add.overlap(player, itemSpeed, this.pickUpitemSpeed, null, this);
@@ -277,7 +279,7 @@ for (const itemSpeed of this.itemSpeeds.children.entries) {
     for (const itemInvisibility of itemInvisibilityObject) {
     this.itemInvisibilities.create(itemInvisibility.x, itemInvisibility.y, 'invinsibilityPotion')
         .setOrigin(0.5,0.5)
-        .setScale(0.05)
+        .setScale(0.5)
 }
 for (const itemInvisibility of this.itemInvisibilities.children.entries) {
     this.physics.add.overlap(player, itemInvisibility, this.pickUpitemInvisibility, null, this);
@@ -316,7 +318,8 @@ this.physics.add.overlap(player, this.coins, this.pickUpCoin, null, this);
     for (const escalierGoUp of escalierGoUpObjects) {
     this.escaliersGoUp.create(escalierGoUp.x, escalierGoUp.y, 'stairsGoUp')
         .setOrigin(0.5,0.5)
-        .setScale(0.1)
+        .setScale(2)
+        
         
 }
 for (const escalierGoUp of this.escaliersGoUp.children.entries) {
@@ -333,8 +336,7 @@ for (const escalierGoUp of this.escaliersGoUp.children.entries) {
     for (const escalierGoDown of escalierGoDownObjects) {
     this.escaliersGoDown.create(escalierGoDown.x, escalierGoDown.y, 'stairs')
         .setOrigin(0.5,0.5)
-        .setScale(0.1)
-        .setDepth(1)
+        .setScale(2)
 }
 for (const escalierGoDown of this.escaliersGoDown.children.entries) {
     this.physics.add.overlap(player, escalierGoDown, this.useStairsGoDown, null, this);
@@ -360,6 +362,19 @@ for (const itemHeart of this.itemHearts.children.entries) {
     this.physics.add.overlap(player, this.itemHearts, this.pickUpItemHeart, null, this);
     ////////////////////////////////////////////////////////////////////////
     ////////////////////ENEMY BOMB/////////////////////////////////////////
+this.anims.create({
+    key: 'walkUpEnemyBomb',
+    frames: this.anims.generateFrameNumbers('spritesheetEnemyBomb',  {start: 4, end: 7 }),
+    frameRate: 10,
+    repeat: -1
+});
+this.anims.create({
+    key: 'walkDownEnemyBomb',
+    frames: this.anims.generateFrameNumbers('spritesheetEnemyBomb',  {start: 0, end: 3 }),
+    frameRate: 10,
+    repeat: -1
+});
+
     this.enemyBombs = this.physics.add.group({
         immovable:true
     });
@@ -370,7 +385,7 @@ for (const itemHeart of this.itemHearts.children.entries) {
     for (const enemyBomb of enemyBombObjects) {
     this.enemyBombs.create(enemyBomb.x, enemyBomb.y, 'enemyBomb')
         .setOrigin(0.5,0.5)
-        .setScale(0.025)
+        .setScale(0.75)
      
 }
 for (const enemyBomb of this.enemyBombs.children.entries) {
@@ -384,6 +399,8 @@ enemyBomb.direction="UP"
 const probaDropBomb = ["heart","invinsibility"]
     ////////////////////////////////////////////////////////////////////////
     ////////////////////BOMB EXPLOSION/////////////////////////////////////////
+
+
     this.bombExplosions = this.physics.add.group({
         immovable:true
     });
@@ -402,15 +419,23 @@ this.physics.add.overlap(this.destroyableWalls, this.enemyBombExplosions, this.d
     this.enemyFollowers = this.physics.add.group({
         immovable:true
     });
-   
+
     const enemyFollowerObjects = this.map.getObjectLayer('enemyFollower').objects;
 
 
     for (const enemyFollower of enemyFollowerObjects) {
     this.enemyFollowers.create(enemyFollower.x, enemyFollower.y, 'enemyFollower')
         .setOrigin(0.5,0.5)
-        .setScale(0.05)
+        .setScale(0.8)
 }
+
+this.anims.create({
+    key: 'moveFollower',
+    frames: this.anims.generateFrameNumbers('spritesheetFollower',  {start: 0, end: 1 }),
+    frameRate: 3,
+    repeat: -1
+});
+
 for (const enemyFollower of this.enemyFollowers.children.entries) {
 this.physics.add.collider(player, enemyFollower, this.contactFollowerPlayer, null, this);
 this.physics.add.collider(daggers, enemyFollower, this.contactDaggerFollower, null, this)
@@ -451,6 +476,12 @@ if(heartLeft<=0){
 if(invinsibilityActive==false){
     for (const enemyFollower of this.enemyFollowers.children.entries) {
         this.physics.moveTo(enemyFollower, player.x, player.y, 50);
+        if(player.x>enemyFollower.x){
+        enemyFollower.play('moveFollower', true).setFlipX(true);
+        }
+        if(player.x<enemyFollower.x){
+        enemyFollower.play('moveFollower', true).setFlipX(false);
+        }
     }
 }
 else if (invinsibilityActive==true){
@@ -460,10 +491,13 @@ else if (invinsibilityActive==true){
 }
 for (const enemyBomb of this.enemyBombs.children.entries) {
 if (enemyBomb.body.blocked.down) {
+    enemyBomb.play('walkUpEnemyBomb', true);
     enemyBomb.direction = 'UP';
 }
 
 if (enemyBomb.body.blocked.up) {
+    
+    enemyBomb.play('walkDownEnemyBomb', true);
     enemyBomb.direction = 'DOWN';
 }
 
@@ -697,27 +731,28 @@ destroyPauseInventory(){
     coinsText.destroy();
 }
 destroyEnemyBomb(enemyBomb){
+    console.log("destroy")
     enemyBombExplosion = this.enemyBombExplosions.create(enemyBomb.x, enemyBomb.y, 'enemyBombExplosion').setScrollFactor(1).setScale(0.1).setDepth(2)
     enemyBomb.destroy();
     this.time.delayedCall(1000, this.endExplosionEnemyBomb, null, this);
     var randomEnemyBombDrop = Phaser.Math.Between(0, 5);
     if(randomEnemyBombDrop==0){
-        this.coins.create(enemyBomb.x, enemyBomb.y, 'coin').setScale(0.05)
+        this.coins.create(enemyBomb.x, enemyBomb.y, 'coin').setScale(0.5)
     }
     if(randomEnemyBombDrop==1){
-        this.itemHearts.create(enemyBomb.x, enemyBomb.y, 'heart').setScale(0.05)
+        this.itemHearts.create(enemyBomb.x, enemyBomb.y, 'heart').setScale(0.025)
     }
     if(randomEnemyBombDrop==2){
-        this.itemBombs.create(enemyBomb.x, enemyBomb.y, 'itemBomb').setScale(0.1)
+        this.itemBombs.create(enemyBomb.x, enemyBomb.y, 'itemBomb').setScale(0.025)
     }
     if(randomEnemyBombDrop==3){
-        this.itemSpeeds.create(enemyBomb.x, enemyBomb.y, 'speedPotion').setScale(0.025)
+        this.itemSpeeds.create(enemyBomb.x, enemyBomb.y, 'speedPotion').setScale(0.35)
     }
     if(randomEnemyBombDrop==4){
-        this.itemInvisibilities.create(enemyBomb.x, enemyBomb.y, 'invinsibilityPotion').setScale(0.05)
+        this.itemInvisibilities.create(enemyBomb.x, enemyBomb.y, 'invinsibilityPotion').setScale(0.5)
     }
     if(randomEnemyBombDrop==5){
-        this.itemDaggers.create(enemyBomb.x, enemyBomb.y, 'dagger').setScale(0.05)
+        this.itemDaggers.create(enemyBomb.x, enemyBomb.y, 'dagger').setScale(0.5)
     }
 }
 contactFollowerPlayer(player,enemyFollower){
@@ -1005,7 +1040,7 @@ openChestRandom(player, chest){
         interagirText.destroy();
         var randomChestDrop = Phaser.Math.Between(0, 5);
         if(randomChestDrop==0){
-            this.coins.create(chest.x+10, chest.y, 'coin').setScale(0.025)
+            this.coins.create(chest.x+10, chest.y, 'coin').setScale(0.5)
         }
         if(randomChestDrop==1){
             this.itemHearts.create(chest.x+10, chest.y, 'heart').setScale(0.025)
@@ -1014,34 +1049,34 @@ openChestRandom(player, chest){
             this.itemBombs.create(chest.x+10, chest.y, 'itemBomb').setScale(0.025)
         }
         if(randomChestDrop==3){
-            this.itemSpeeds.create(chest.x+10, chest.y, 'speedPotion').setScale(0.025)
+            this.itemSpeeds.create(chest.x+10, chest.y, 'speedPotion').setScale(0.35)
         }
         if(randomChestDrop==4){
-            this.itemInvisibilities.create(chest.x+10, chest.y, 'invinsibilityPotion').setScale(0.025)
+            this.itemInvisibilities.create(chest.x+10, chest.y, 'invinsibilityPotion').setScale(0.5)
         }
         if(randomChestDrop==5){
-            this.itemDaggers.create(chest.x, chest.y, 'dagger').setScale(0.05)
+            this.itemDaggers.create(chest.x, chest.y, 'dagger').setScale(0.5)
         }
 
 
         var randomChestDrop = Phaser.Math.Between(0, 5);
         if(randomChestDrop==0){
-            this.coins.create(chest.x, chest.y, 'coin').setScale(0.05)
+            this.coins.create(chest.x, chest.y, 'coin').setScale(0.5)
         }
         if(randomChestDrop==1){
-            this.itemHearts.create(chest.x-5, chest.y-5, 'heart').setScale(0.05)
+            this.itemHearts.create(chest.x-5, chest.y-5, 'heart').setScale(0.025)
         }
         if(randomChestDrop==2){
-            this.itemBombs.create(chest.x-5, chest.y-5, 'itemBomb').setScale(0.1)
+            this.itemBombs.create(chest.x-5, chest.y-5, 'itemBomb').setScale(0.025)
         }
         if(randomChestDrop==3){
-            this.itemSpeeds.create(chest.x-5, chest.y-5, 'speedPotion').setScale(0.025)
+            this.itemSpeeds.create(chest.x-5, chest.y-5, 'speedPotion').setScale(0.35)
         }
         if(randomChestDrop==4){
-            this.itemInvisibilities.create(chest.x-5, chest.y-5, 'invinsibilityPotion').setScale(0.05)
+            this.itemInvisibilities.create(chest.x-5, chest.y-5, 'invinsibilityPotion').setScale(0.5)
         }
         if(randomChestDrop==5){
-            this.itemDaggers.create(chest.x, chest.y, 'dagger').setScale(0.05)
+            this.itemDaggers.create(chest.x, chest.y, 'dagger').setScale(0.5)
         }
 }
 useStairsGoUp(player, stairs){
